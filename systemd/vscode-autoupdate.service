@@ -1,0 +1,9 @@
+[Unit]
+Description=Update the VS Code Flatpak (com.visualstudio.code)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Updates VS Code plus the runtime it needs; other Flatpaks are left alone.
+ExecStart=/usr/bin/flatpak update --system --noninteractive -y com.visualstudio.code

@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily VS Code Flatpak update
+
+[Timer]
+OnCalendar=daily
+# Run at next boot/wake if the PC was off or asleep at the scheduled time.
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target
