@@ -1,0 +1,6 @@
+[Unit]
+Description=Point VS Code's Download Update button at the Flatpak updater
+
+[Service]
+Type=oneshot
+ExecStart=/etc/vscode-autoupdate/vscode-patch-product

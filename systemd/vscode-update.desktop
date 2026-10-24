@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=VS Code Flatpak updater
+Exec=@BIN@/vscode-update-now %u
+NoDisplay=true
+MimeType=x-scheme-handler/vscode-flatpak-update;

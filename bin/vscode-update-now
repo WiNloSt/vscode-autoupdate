@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Handler for the vscode-flatpak-update:// URL that VS Code's "Download Update" button opens (see vscode-patch-product).
+# Runs the Flatpak update as the current user (polkit allows it from the active desktop session without a password).
+# Usage: vscode-update-now [--dry-run] [--print-config] [URL]
+set -euo pipefail
+app=com.visualstudio.code
+dry_run=0; print_config=0; url=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) dry_run=1 ;;
+    --print-config) print_config=1 ;;
+    -*) echo "unknown flag: $arg" >&2; exit 2 ;;
+    *) url="$arg" ;;
+  esac
+done
+if [[ -n "$url" && "$url" != vscode-flatpak-update://* ]]; then echo "refusing URL: $url" >&2; exit 2; fi
+cmd=(flatpak update --system --noninteractive -y "$app")
+echo "app=$app command=${cmd[*]} url=${url:-none} dry_run=$dry_run"
+[[ $print_config -eq 1 || $dry_run -eq 1 ]] && exit 0
+notify-send -a "VS Code" "Updating VS Code…" "Running the Flatpak update." || true
+if out=$("${cmd[@]}" 2>&1); then
+  notify-send -a "VS Code" "VS Code update finished" "Restart VS Code to use the new version." || true
+else
+  notify-send -a "VS Code" -u critical "VS Code update failed" "${out: -300}" || true
+  echo "$out" >&2; exit 1
+fi
+echo "$out"

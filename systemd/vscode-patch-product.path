@@ -1,0 +1,10 @@
+[Unit]
+Description=Re-patch VS Code's product.json after a Flatpak update
+
+[Path]
+# An update repoints the "active" symlink in this folder at the new deployment.
+PathChanged=/var/lib/flatpak/app/com.visualstudio.code/x86_64/stable
+Unit=vscode-patch-product.service
+
+[Install]
+WantedBy=multi-user.target

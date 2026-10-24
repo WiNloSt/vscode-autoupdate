@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Point the VS Code Flatpak's "Download Update" button at vscode-flatpak-update:// (handled by vscode-update-now).
+# Run as root; the path unit runs it again after every Flatpak update, because an update deploys a fresh product.json.
+# Usage: vscode-patch-product [--revert] [--dry-run] [--print-config]
+set -euo pipefail
+root=/var/lib/flatpak/app/com.visualstudio.code/x86_64/stable/active/files/extra/vscode/resources/app
+file="$root/product.json"
+original='https://code.visualstudio.com'
+patched='vscode-flatpak-update://now'
+revert=0; dry_run=0; print_config=0
+for arg in "$@"; do
+  case "$arg" in
+    --revert) revert=1 ;;
+    --dry-run) dry_run=1 ;;
+    --print-config) print_config=1 ;;
+    *) echo "unknown flag: $arg" >&2; exit 2 ;;
+  esac
+done
+from="\"downloadUrl\": \"$original\""; to="\"downloadUrl\": \"$patched\""
+[[ $revert -eq 1 ]] && { tmp=$from; from=$to; to=$tmp; }
+echo "file=$file replace=[$from] with=[$to] dry_run=$dry_run"
+[[ $print_config -eq 1 ]] && exit 0
+[[ -f "$file" ]] || { echo "no product.json at $file" >&2; exit 1; }
+if grep -qF "$to" "$file"; then echo "already in the wanted state"; exit 0; fi
+grep -qF "$from" "$file" || { echo "downloadUrl line not found; VS Code changed its product.json" >&2; exit 1; }
+[[ $dry_run -eq 1 ]] && { echo "would patch"; exit 0; }
+sed -i "s|$from|$to|" "$file"
+grep -qF "$to" "$file" && echo "patched"
