@@ -43,6 +43,10 @@ sudo systemctl start vscode-autoupdate.service   # update now
   `vscode-patch-product.path` re-patches after every update. Tested end to end: downgraded to 1.138.0, clicked the
   button, and it updated to 1.139.1 and was re-patched. The button disappears on click (VS Code resets its state to
   idle after opening the link), and shows again after "Check for Updates" until VS Code is restarted.
+- Done (2026-10-24): the "VS Code update finished" notification has a "Restart VS Code" button (like the stock
+  "Restart to Update"). It sends SIGTERM to the main VS Code processes (hot exit saves unsaved files), waits up to
+  30 s, then relaunches, which reopens the previous windows. Tested by the user. Try it without updating:
+  `bin/vscode-update-now --offer-restart-only`; `--no-restart-offer` leaves the button out.
 - Downgrade to test again: `sudo flatpak update --system -y --commit=<commit> com.visualstudio.code`
   (`flatpak remote-info --log flathub com.visualstudio.code` lists commits).
 

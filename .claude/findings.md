@@ -20,3 +20,10 @@
 - No "installation corrupt" warning in the VS Code log with the patched product.json.
 - Quirk: the button disappears right after the click (VS Code resets to idle on Linux); "Check for Updates" shows it
   again until VS Code restarts. Progress is only visible via the notify-send notifications.
+
+## 2026-10-24: restart button on the finished notification, tested by the user
+- `notify-send -A` (libnotify 0.8.8) gives "Restart VS Code" / "Later"; a click runs SIGTERM on the main processes
+  (`/app/extra/vscode/code` without `--type=`, not running a script under `/app/` or the extensions folder), then
+  `flatpak run com.visualstudio.code`. The user clicked it and VS Code came back on 1.139.1.
+- Decision (user, 2026-10-24: "just like the normal update"): behave like stock VS Code's restart-to-update. No test
+  script yet; the manual `--offer-restart-only` flag is the check.
