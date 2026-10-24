@@ -13,3 +13,10 @@
   `.../x86_64/stable` folder changes, i.e. after each update), and install.sh steps for all of it.
 - Not done: `./install.sh` was denied by the auto-mode classifier ("unauthorized persistence"); the user must run it.
 - Untested: the real button click, and that VS Code accepts a patched product.json without an "installation corrupt" warning.
+
+## 2026-10-24: update button hook installed and tested
+- install.sh run by the user; button click verified: downgraded to 1.138.0 (commit 10a010f7), VS Code showed "Download
+  Update", click ran `vscode-update-now`, updated to 1.139.1, and the path unit re-patched product.json by itself.
+- No "installation corrupt" warning in the VS Code log with the patched product.json.
+- Quirk: the button disappears right after the click (VS Code resets to idle on Linux); "Check for Updates" shows it
+  again until VS Code restarts. Progress is only visible via the notify-send notifications.

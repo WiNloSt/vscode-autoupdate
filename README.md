@@ -38,8 +38,13 @@ sudo systemctl start vscode-autoupdate.service   # update now
   The units pass `systemd-analyze verify`.
 - Done: the timer is installed (2026-10-19: `systemctl list-timers` shows it, next run 2026-10-20 00:07 +07).
 - Test: none yet, besides a manual `flatpak update ... --no-deploy` check ("Nothing to do").
-- Next (proposed, not built): make VS Code's own "Download Update" button run the Flatpak update instead of opening
-  the website. See the findings below.
+- Done (2026-10-24): VS Code's "Download Update" button runs the Flatpak update. `bin/vscode-patch-product` points
+  `downloadUrl` at `vscode-flatpak-update://now`, `bin/vscode-update-now` handles that URL, and
+  `vscode-patch-product.path` re-patches after every update. Tested end to end: downgraded to 1.138.0, clicked the
+  button, and it updated to 1.139.1 and was re-patched. The button disappears on click (VS Code resets its state to
+  idle after opening the link), and shows again after "Check for Updates" until VS Code is restarted.
+- Downgrade to test again: `sudo flatpak update --system -y --commit=<commit> com.visualstudio.code`
+  (`flatpak remote-info --log flathub com.visualstudio.code` lists commits).
 
 ## Findings: hooking the update button (2026-10-19)
 
