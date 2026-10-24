@@ -23,7 +23,8 @@ systemctl enable --now vscode-patch-product.path
 /etc/vscode-autoupdate/vscode-patch-product   # patch the current install now; the path unit handles later updates
 
 # The click handler belongs to the real user, not root.
-user="${SUDO_USER:-deck}"
+user="${SUDO_USER:-}"
+[[ -n "$user" && "$user" != root ]] || { echo "Run this as your normal user (it uses sudo itself), not as root directly." >&2; exit 1; }
 user_home="$(getent passwd "$user" | cut -d: -f6)"
 apps="$user_home/.local/share/applications"
 sudo -u "$user" mkdir -p "$apps"

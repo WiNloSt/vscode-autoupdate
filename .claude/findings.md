@@ -27,3 +27,10 @@
   `flatpak run com.visualstudio.code`. The user clicked it and VS Code came back on 1.139.1.
 - Decision (user, 2026-10-24: "just like the normal update"): behave like stock VS Code's restart-to-update. No test
   script yet; the manual `--offer-restart-only` flag is the check.
+
+## 2026-10-24: audit before making the repo public
+- Secrets: `gitleaks git` and `gitleaks dir` clean (10 commits); manual grep for tokens/keys/passwords found none.
+- In the tree: no email, real name or home path. `install.sh` no longer defaults the user to `deck`.
+- In git history (not rewritten): author name and email on all commits, and a `Claude-Session:` URL trailer on
+  every commit. Both are public once pushed; decision pending with the user.
+- README now says the repo applies to any systemd Linux with the system Flathub Flatpak, not only SteamOS.

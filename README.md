@@ -1,6 +1,23 @@
 # vscode-autoupdate
 
-Keeps VS Code (the Flathub Flatpak `com.visualstudio.code`, system install) up to date on this SteamOS PC.
+Keeps VS Code (the Flathub Flatpak `com.visualstudio.code`, system install) up to date on Linux, and makes VS Code's
+own "Download Update" button run that update (with a "Restart VS Code" button when it's done).
+
+## Who this is for
+
+Any Linux system with systemd where VS Code is installed as the **system** Flathub Flatpak. It was written and tested on
+SteamOS (desktop mode, KDE Plasma), but nothing in the problem is SteamOS-specific:
+
+- A Flatpak can't update itself, and VS Code's own updater doesn't exist on Linux: the button only opens
+  code.visualstudio.com. That is true on every distribution.
+- SteamOS only adds one reason for the choices below: its root filesystem is replaced by atomic updates, so the units
+  live in `/etc`, which survives them. On other distributions that is simply the normal place for local units.
+- Not tested elsewhere. Untested assumptions: polkit lets an active desktop session update a system Flatpak without a
+  password (`org.freedesktop.Flatpak.app-update` is `allow_active=yes` by default), a notification daemon that supports
+  actions (KDE does), and `xdg-mime`/`update-desktop-database` being installed. A `--user` Flatpak install needs
+  different paths and is not supported.
+
+## What it does
 
 - `systemd/vscode-autoupdate.timer` runs `vscode-autoupdate.service` daily (catching up after sleep/power-off), which
   runs `flatpak update --system --noninteractive -y com.visualstudio.code`. Other Flatpaks are not touched.
@@ -10,7 +27,7 @@ Keeps VS Code (the Flathub Flatpak `com.visualstudio.code`, system install) up t
 ## Install
 
 ```sh
-~/workspace/vscode-autoupdate/install.sh   # asks for sudo itself
+./install.sh   # from a clone of this repo; asks for sudo itself
 ```
 
 ## Check
