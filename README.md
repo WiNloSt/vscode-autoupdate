@@ -10,7 +10,7 @@ Keeps VS Code (the Flathub Flatpak `com.visualstudio.code`, system install) up t
 ## Install
 
 ```sh
-sudo ~/workspace/vscode-autoupdate/install.sh
+~/workspace/vscode-autoupdate/install.sh   # asks for sudo itself
 ```
 
 ## Check
