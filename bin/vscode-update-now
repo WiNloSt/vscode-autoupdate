@@ -1,27 +1,78 @@
 #!/usr/bin/env bash
 # Handler for the vscode-flatpak-update:// URL that VS Code's "Download Update" button opens (see vscode-patch-product).
-# Runs the Flatpak update as the current user (polkit allows it from the active desktop session without a password).
-# Usage: vscode-update-now [--dry-run] [--print-config] [URL]
+# Runs the Flatpak update as the current user (polkit allows it from the active desktop session without a password),
+# then offers a "Restart VS Code" button on the notification, like the stock "Restart to Update" on other platforms.
+# Usage: vscode-update-now [--dry-run] [--print-config] [--offer-restart-only] [--no-restart-offer] [URL]
+#   --offer-restart-only  skip the update and only show the restart notification (to try the button)
+#   --no-restart-offer    update and notify, without the restart button
 set -euo pipefail
 app=com.visualstudio.code
-dry_run=0; print_config=0; url=""
+quit_wait_seconds=30       # how long to wait for VS Code to exit after SIGTERM (a save prompt can hold it open)
+offer_timeout_seconds=900  # how long the restart notification waits for a click
+dry_run=0; print_config=0; offer_only=0; offer_restart=1; url=""
 for arg in "$@"; do
   case "$arg" in
     --dry-run) dry_run=1 ;;
     --print-config) print_config=1 ;;
+    --offer-restart-only) offer_only=1 ;;
+    --no-restart-offer) offer_restart=0 ;;
     -*) echo "unknown flag: $arg" >&2; exit 2 ;;
     *) url="$arg" ;;
   esac
 done
 if [[ -n "$url" && "$url" != vscode-flatpak-update://* ]]; then echo "refusing URL: $url" >&2; exit 2; fi
+if [[ $offer_only -eq 1 && $offer_restart -eq 0 ]]; then echo "--offer-restart-only contradicts --no-restart-offer" >&2; exit 2; fi
 cmd=(flatpak update --system --noninteractive -y "$app")
-echo "app=$app command=${cmd[*]} url=${url:-none} dry_run=$dry_run"
+
+# Main VS Code processes: the sandboxed `code` binary without --type= (helpers) and not running a script (language servers).
+main_pids() {
+  pgrep -f '^/app/extra/vscode/code' | while read -r pid; do
+    args=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null) || continue
+    [[ "$args" == *" --type="* ]] && continue
+    [[ "$args" == "/app/extra/vscode/code /app/"* || "$args" == "/app/extra/vscode/code $HOME/.var/app/$app/"* ]] && continue
+    echo "$pid"
+  done
+}
+
+restart_vscode() {
+  local pids; pids=$(main_pids)
+  if [[ -n "$pids" ]]; then
+    # SIGTERM lets VS Code run its normal quit (hot exit saves unsaved files); a save prompt can keep it open.
+    # shellcheck disable=SC2086
+    kill -TERM $pids
+    for ((i = 0; i < quit_wait_seconds; i++)); do
+      [[ -z "$(main_pids)" ]] && break
+      sleep 1
+    done
+    if [[ -n "$(main_pids)" ]]; then
+      notify-send -a "VS Code" -u critical "VS Code did not close" "Finish any save prompt, then reopen it yourself." || true
+      return 1
+    fi
+  fi
+  setsid -f flatpak run "$app" >/dev/null 2>&1   # reopens the previous windows (window.restoreWindows)
+}
+
+offer_restart_button() {
+  local choice
+  choice=$(timeout "$offer_timeout_seconds" notify-send -a "VS Code" -t 0 \
+    -A restart="Restart VS Code" -A later="Later" \
+    "VS Code update finished" "Restart VS Code to use the new version." || true)
+  [[ "$choice" == restart ]] && restart_vscode
+  return 0
+}
+
+echo "app=$app command=${cmd[*]} url=${url:-none} dry_run=$dry_run offer_only=$offer_only offer_restart=$offer_restart"
+echo "running main pids: $(main_pids | tr '\n' ' ')"
 [[ $print_config -eq 1 || $dry_run -eq 1 ]] && exit 0
+
+if [[ $offer_only -eq 1 ]]; then offer_restart_button; exit 0; fi
+
 notify-send -a "VS Code" "Updating VS Code…" "Running the Flatpak update." || true
 if out=$("${cmd[@]}" 2>&1); then
-  notify-send -a "VS Code" "VS Code update finished" "Restart VS Code to use the new version." || true
+  echo "$out"
+  if [[ $offer_restart -eq 1 ]]; then offer_restart_button
+  else notify-send -a "VS Code" "VS Code update finished" "Restart VS Code to use the new version." || true; fi
 else
   notify-send -a "VS Code" -u critical "VS Code update failed" "${out: -300}" || true
   echo "$out" >&2; exit 1
 fi
-echo "$out"
